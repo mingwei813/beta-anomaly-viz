@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Beta异常波动率之谜 | JFE 2025 论文可视化</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #f0f2f8;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            color: #0f172a;
+            scroll-behavior: smooth;
+        }
+        .pages-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .page {
+            max-width: 1300px;
+            width: 90%;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            scroll-margin-top: 1rem;
+        }
+        .page:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 25px 40px -12px rgba(0,0,0,0.2);
+        }
+        .page-header {
+            background: linear-gradient(98deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 1.2rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+        }
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .page-number {
+            background: #334155;
+            padding: 0.2rem 0.9rem;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .page-content {
+            padding: 1.8rem 2rem 2rem 2rem;
+        }
+        .insight-card {
+            background: #f8fafc;
+            border-left: 5px solid #3b82f6;
+            padding: 1rem 1.2rem;
+            border-radius: 1rem;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        .grid-2cols {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 1.2rem 0;
+        }
+        .stat-badge {
+            background: #eef2ff;
+            border-radius: 1rem;
+            padding: 0.8rem;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1e40af;
+        }
+        .chart-container {
+            height: 260px;
+            margin: 1rem 0;
+        }
+        canvas {
+            max-height: 240px;
+            width: 100%;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            background: #f9f9ff;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+        .data-table th, .data-table td {
+            padding: 0.6rem;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        .data-table th {
+            background: #eef2ff;
+            font-weight: 600;
+        }
+        .footnote {
+            font-size: 0.7rem;
+            color: #475569;
+            margin-top: 1rem;
+            text-align: center;
+            border-top: 1px solid #e9edf2;
+            padding-top: 0.8rem;
+        }
+        .nav-buttons {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: #1e293b;
+            padding: 0.6rem 1rem;
+            border-radius: 3rem;
+            display: flex;
+            gap: 0.8rem;
+            z-index: 1000;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .nav-btn {
+            background: #3b82f6;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.8rem;
+        }
+        .nav-btn:hover {
+            background: #2563eb;
+        }
+        .page-indicator {
+            background: #0f172a;
+            color: white;
+            padding: 0.2rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+        }
+        @media (max-width: 750px) {
+            .page-content { padding: 1.2rem; }
+            .page-title { font-size: 1.2rem; }
+        }
+        hr { margin: 0.8rem 0; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .conclusion-highlight {
+            background: #e6f7ec;
+            border-left-color: #10b981;
+        }
+    </style>
+</head>
+<body>
+<div class="pages-container" id="pagesContainer">
+    <!-- 第1页：论文标题、期刊、作者及概述 -->
+    <div class="page" id="page1">
+        <div class="page-header"><div class="page-title"><i class="fas fa-file-alt"></i> 论文核心信息</div><div class="page-number">1 / 16</div></div>
+        <div class="page-content">
+            <h1 style="font-size: 1.9rem; margin-bottom: 0.5rem;">The volatility puzzle of the beta anomaly</h1>
+            <p style="font-size: 1rem; color: #2c3e66; margin-bottom: 0.25rem;"><strong>期刊:</strong> Journal of Financial Economics 165 (2025) 103994</p>
+            <p style="font-size: 1rem; color: #2c3e66; margin-bottom: 1rem;"><strong>作者:</strong> Pedro Barroso, Andrew Detzel, Paulo Maio</p>
+            <div class="insight-card"><i class="fas fa-quote-left"></i> <strong>摘要</strong>：低Beta股票获得显著正CAPM超额收益（高Beta为负）的Beta异常持续五十年。本文发现，BAB因子的夏普比率在低波动时期翻倍（0.72），高波动时期崩溃（0.13）。杠杆约束、多因子模型、套利限制、彩票偏好等主流理论均无法解释这一条件表现。机构投资者在波动上升时系统性降低高Beta需求，足以解释大部分时变异象。</div>
+            <div class="grid-2cols">
+                <div class="stat-badge"><div class="stat-number">0.34</div><div>无条件夏普 (BAB)</div><div class="footnote" style="margin-top:0.3rem">原文Table 1</div></div>
+                <div class="stat-badge"><div class="stat-number">0.50</div><div>波动率管理 BAB* 夏普</div><div class="footnote" style="margin-top:0.3rem">提升47%</div></div>
+                <div class="stat-badge"><div class="stat-number">+0.97%</div><div>低-高波动月Alpha差 (FF6)</div><div class="footnote" style="margin-top:0.3rem">t=3.03</div></div>
+                <div class="stat-badge"><div class="stat-number">0.72 vs 0.13</div><div>低波动/高波动 夏普差距</div><div class="footnote" style="margin-top:0.3rem">极显著</div></div>
+            </div>
+            <div class="insight-card conclusion-highlight"><i class="fas fa-chart-line"></i> <strong>核心结论</strong>：BAB因子的条件表现对所有现有理论构成挑战，而机构投资者因基准考核和风险约束在低波动时追逐高Beta、高波动时撤退，是解释该谜题的关键渠道。</div>
+        </div>
+    </div>
+
+    <!-- 第2页：BAB因子构造与数据 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-database"></i> BAB因子构建方法</div><div class="page-number">2 / 16</div></div>
+        <div class="page-content">
+            <p>使用NYSE/AMEX/NASDAQ股票，按月滚动60个月CAPM回归（Dimson修正），Vasicek收缩估计beta。按beta排序构建价值加权十等分组合，并通过直接对冲市场风险实现beta中性：</p>
+            <div class="insight-card"><code>BAB_t = r_L,t - r_H,t - (β_L,t-1 - β_H,t-1) × MKT_t</code></div>
+            <p>对比Frazzini & Pedersen (2014)的净多头缩放，本方法避免微盘股极端权重，且更好地隔离beta异象。波动率管理因子定义为：BAB*<sub>t+1</sub> = (c/σ̂<sub>t</sub>) × BAB<sub>t+1</sub>，σ̂为过去21日实现波动率。</p>
+            <div class="insight-card"><i class="fas fa-chart-simple"></i> <strong>结论</strong>：通过波动率管理，BAB*年化夏普从0.34升至0.50，偏度由负转正，尾部风险显著降低（原文Table 1）。这说明低波动时期BAB具有更高的风险调整后收益。</div>
+        </div>
+    </div>
+
+    <!-- 第3页：波动率管理绩效明细 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-waveform"></i> 波动率管理BAB*绩效</div><div class="page-number">3 / 16</div></div>
+        <div class="page-content">
+            <div class="chart-container"><canvas id="sharpeCompChart" width="400" height="200"></canvas></div>
+            <table class="data-table"><tr><th>策略</th><th>月均收益(%)</th><th>标准差(%)</th><th>夏普比率</th></tr><tr><td>BAB原始</td><td>0.45</td><td>4.64</td><td>0.34</td></tr><tr><td>BAB* 波动率管理</td><td>0.67</td><td>4.64</td><td>0.50</td></tr></table>
+            <div class="insight-card">🔍 <strong>图表结论</strong>：波动率管理因子在低波动月份获得更高杠杆，夏普比率显著提升（Jobson & Korkie检验z=2.04）。这表明BAB因子的条件夏普比率与滞后实现波动率负相关，为后续条件分析奠定基础。</div>
+        </div>
+    </div>
+
+    <!-- 第4页：条件表现核心证据 —— 低波动vs高波动 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-calendar-week"></i> 低波动 vs 高波动：BAB表现分裂</div><div class="page-number">4 / 16</div></div>
+        <div class="page-content">
+            <div class="chart-container"><canvas id="conditionalSRChart" style="height:220px;"></canvas></div>
+            <table class="data-table"><tr><th>状态</th><th>BAB夏普</th><th>FF6月Alpha(%)</th><th>MKT载荷</th></tr><tr><td>低波动(<中位数)</td><td>0.72</td><td>0.56***</td><td>0.18</td></tr><tr><td>高波动(>中位数)</td><td>0.13</td><td>-0.41</td><td>0.44</td></tr><tr><td>低-高差值</td><td>0.59***</td><td>0.97***</td><td>-0.25***</td></tr></table>
+            <div class="insight-card">📊 <strong>图表结论</strong>：低波动时BAB的FF6 alpha高达0.56%/月(t=2.92)，而高波动转为负值。同时因子载荷显著减小，说明异常收益在“最不需要承担风险”时最强，违背理性风险-收益权衡（原文Table 3 Panel B/C）。</div>
+        </div>
+    </div>
+
+    <!-- 第5页：多因子模型无条件定价成功，但条件失败 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-cubes"></i> FF6无法解释条件Alpha</div><div class="page-number">5 / 16</div></div>
+        <div class="page-content">
+            <div class="chart-container"><canvas id="ff6AlphaBarChart" style="height:220px;"></canvas></div>
+            <p>无条件下FF6模型alpha为-0.08%(不显著)，表明六因子可以解释beta异象。但一旦区分波动状态：低波动期alpha跳升至0.56%，高波动期为-0.41%，差值0.97%(t=3.03)。消费CAPM和中介杠杆因子同样无法消除条件alpha。</p>
+            <div class="insight-card">⚠️ <strong>图表结论</strong>：即使使用包含盈利、投资、动量因子的FF6模型，条件alpha依然显著为正。条件因子模型（含滞后波动率工具）显示，波动率每降低一个标准差，alpha上升0.5~0.7个百分点（原文Table 4）。</div>
+        </div>
+    </div>
+
+    <!-- 第6页：套利限制与IVOL/错误定价控制 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-ban"></i> 控制IVOL与错误定价后仍显著</div><div class="page-number">6 / 16</div></div>
+        <div class="page-content">
+            <div class="chart-container"><canvas id="arbitrageControlChart" style="height:220px;"></canvas></div>
+            <table class="data-table"><tr><th>BAB变体</th><th>低波动alpha(%)</th><th>高波动alpha(%)</th><th>差值(%)</th></tr><tr><td>剔除高IVOL股票</td><td>0.54</td><td>-0.39</td><td>0.93***</td></tr><tr><td>Beta正交化IVOL</td><td>0.45</td><td>-0.45</td><td>0.90***</td></tr><tr><td>剔除错误定价最高组</td><td>0.39</td><td>-0.62</td><td>1.01***</td></tr></table>
+            <div class="insight-card">📌 <strong>图表结论</strong>：即使控制住Liu et al.(2018)的套利不对称、高特质波动和高错误定价股票，低波动期的显著正向alpha依然存在，表明套利限制不是条件效应的根源（原文Table 5）。</div>
+        </div>
+    </div>
+
+    <!-- 第7页：彩票偏好、分析师分歧与情绪 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-ticket-alt"></i> 情绪与分歧无法替代波动率</div><div class="page-number">7 / 16</div></div>
+        <div class="page-content">
+            <p>基于Bali等(2017)彩票需求、Baker-Wurgler情绪指数、Hong-Sraer分析师分歧指标，进一步构建beta正交化因子。结果：低-高波动期的alpha差值仍然显著(0.76%~0.9%)，且情绪或分歧不会削弱波动率的预测能力。</p>
+            <div class="grid-2cols"><div class="stat-badge">低情绪×低波动alpha: 0.57%</div><div class="stat-badge">高情绪×高波动alpha: -0.70%</div><div class="stat-badge">低分歧×低波动alpha: 0.19%</div><div class="stat-badge">高分歧×高波动alpha: -0.73%</div></div>
+            <div class="insight-card">🧠 <strong>图表结论</strong>：原文Table 7显示，BAB alpha在控制情绪/分歧后，低波动减高波动的差距依然在0.75~0.98个百分点，且统计显著。波动率携带独特的条件信息，不能被行为变量替代。</div>
+        </div>
+    </div>
+
+    <!-- 第8页：杠杆约束理论反事实预测 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-scale-balanced"></i> 杠杆约束模型：错误的正向关系</div><div class="page-number">8 / 16</div></div>
+        <div class="page-content">
+            <div class="chart-container"><canvas id="leverageModelChart" style="height:220px;"></canvas></div>
+            <p>Frazzini-Pedersen (2014) 模型校准：随着资产支付波动率增加（乘子0.25→2.0），模型预测的BAB夏普比率从0.51上升至0.78，即高波动期应获得更高夏普。但真实市场中，低波动期夏普为0.72，高波动期仅0.13，完全相反。</p>
+            <div class="insight-card">❌ <strong>图表结论</strong>：杠杆约束理论依赖风险厌恶投资者要求正的风险-回报权衡，但BAB在低波动时高回报，高波动时低回报，直接证伪（原文Table 2及讨论）。</div>
+        </div>
+    </div>
+
+    <!-- 第9页：机构投资者需求随波动的变化 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-building"></i> 机构Beta需求：从追逐到撤退</div><div class="page-number">9 / 16</div></div>
+        <div class="page-content">
+            <div class="chart-container"><canvas id="institutionDemandChart" style="height:220px;"></canvas></div>
+            <table class="data-table"><tr><th>投资者类型</th><th>低波动Beta偏好(θ)</th><th>高波动Beta偏好(θ)</th><th>变化</th></tr><tr><td>所有机构</td><td>0.18***</td><td>0.01</td><td>-0.17***</td></tr><tr><td>投资顾问(含对冲基金)</td><td>0.19***</td><td>-0.06***</td><td>-0.25***</td></tr><tr><td>共同基金</td><td>0.19***</td><td>0.03**</td><td>-0.16***</td></tr><tr><td>家庭部门</td><td>-0.10***</td><td>-0.11***</td><td>稳定负偏好</td></tr></table>
+            <div class="insight-card">🏢 <strong>图表结论</strong>：Koijen-Yogo需求系统估计显示，机构投资者在低波动时显著偏爱高beta股票，但在高波动时偏好几乎归零（甚至转负）。家庭始终偏好低beta，为时变异象提供微观基础（原文Table 9）。</div>
+        </div>
+    </div>
+
+    <!-- 第10页：反事实实验与价格冲击 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-chart-line"></i> 反事实：剔除波动敏感机构后的估值影响</div><div class="page-number">10 / 16</div></div>
+        <div class="page-content">
+            <div class="grid-2cols">
+                <div class="stat-badge"><div class="stat-number">8.44%</div><div>低波动期相对估值冲击 (L-H)</div></div>
+                <div class="stat-badge"><div class="stat-number">1.53%</div><div>高波动期相对估值冲击</div></div>
+                <div class="stat-badge"><div class="stat-number">6.91%</div><div>低-高差值  > 所需阈值4.24%</div></div>
+            </div>
+            <p>通过识别机构中组合beta对波动最敏感的10%（按滚动40期回归），将其AUM重新配置给剩余投资者。低波动期低beta组合相对高beta组合价格提升8.44%，高波动期仅1.53%，差值6.91%超过消除条件alpha所需的4.24%（基于Campbell-Shiller分解）。</p>
+            <div class="insight-card conclusion-highlight">✅ <strong>图表结论</strong>：机构因业绩基准压力和跟踪误差惩罚，在波动高企时从高beta向基准撤退，足以解释BAB条件异象的绝大部分（原文Table 10）。</div>
+        </div>
+    </div>
+
+    <!-- 第11页：市场波动 vs BAB自有波动 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-chart-simple"></i> 专属波动 vs 市场波动</div><div class="page-number">11 / 16</div></div>
+        <div class="page-content">
+            <table class="data-table"><tr><th>分组</th><th>BAB低波动</th><th>BAB高波动</th><th>低-高差</th></tr><tr><td>市场低波动</td><td>0.56%</td><td>0.14%</td><td>0.42</td></tr><tr><td>市场高波动</td><td>0.40%</td><td>-0.43%</td><td>0.83</td></tr><tr><td>高-低市场差</td><td>-0.16</td><td>-0.57</td><td>-0.37</td></tr></table>
+            <div class="insight-card">📈 <strong>图表结论</strong>：原文Table 8显示，BAB自身的波动是条件alpha的主要驱动力，市场波动不能替代。在给定市场波动状态下，BAB低波动期始终产生更高alpha。</div>
+        </div>
+    </div>
+
+    <!-- 第12页：稳健性检验 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-flask"></i> 稳健性：多变量条件检验</div><div class="page-number">12 / 16</div></div>
+        <div class="page-content">
+            <p>使用连续条件因子模型（含滞后波动率、违约利差、股利价格比、BAB beta差）后，波动率系数依然显著为负。即使加入分析师分歧和情绪指标，波动率对异常收益的负向预测仍然稳健（原文IA.2表）。</p>
+            <div class="insight-card">🎯 <strong>图表结论</strong>：无论是否控制其他已知预测变量，BAB波动率每增加一标准差，未来月alpha降低约0.5~0.7个百分点。该效应在CAPM、FF3、FF6及宏观因子模型下均一致。</div>
+        </div>
+    </div>
+
+    <!-- 第13页：核心发现总结 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-clipboard-list"></i> 主要发现总结</div><div class="page-number">13 / 16</div></div>
+        <div class="page-content">
+            <ul style="margin-left:1.5rem; line-height:1.6;">
+                <li><i class="fas fa-check-circle" style="color:#10b981;"></i> BAB因子表现强烈依赖于实现波动率：低波动期夏普0.72，高波动期仅0.13。</li>
+                <li><i class="fas fa-check-circle" style="color:#10b981;"></i> FF6、消费CAPM、中介杠杆因子无条件可定价BAB，但完全无法解释条件alpha差异。</li>
+                <li><i class="fas fa-check-circle" style="color:#10b981;"></i> 控制套利限制、IVOL、错误定价、彩票偏好、情绪和分歧后，条件效应仍然高度显著。</li>
+                <li><i class="fas fa-check-circle" style="color:#10b981;"></i> 杠杆约束理论错误预测波动率与BAB夏普正相关，与数据相反。</li>
+                <li><i class="fas fa-check-circle" style="color:#10b981;"></i> 机构投资者在高波动期大幅削减高beta需求，仅占AUM 10%的波动敏感机构足以解释估值差异。</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 第14页：学术启示 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-graduation-cap"></i> 学术启示：条件检验的必要性</div><div class="page-number">14 / 16</div></div>
+        <div class="page-content">
+            <p>Cochrane (2011)强调风险溢价时变，忽略条件信息会导致伪稳健结论。本文表明，即使能够通过无条件资产定价检验的理论，也可能在条件视角下完全失效。未来研究必须纳入波动率等状态变量，重新审视异象背后的经济机制。</p>
+            <div class="insight-card">机构投资者行为——尤其是基于基准的激励和跟踪误差约束——为时变beta异常提供了最直接的微观解释。这一渠道可推广至其他因子（如价值、动量）的条件表现。</div>
+        </div>
+    </div>
+
+    <!-- 第15页：参考文献与数据来源 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-book"></i> 数据与参考文献</div><div class="page-number">15 / 16</div></div>
+        <div class="page-content">
+            <p><strong>数据来源</strong>: CRSP, COMPUSTAT, Thomson Reuters 13F, I/B/E/S, Kenneth French 数据库, Stambaugh 错误定价指标, Baker-Wurgler 情绪指数, Kroencke 消费数据。样本区间: 1965–2016。</p>
+            <p><strong>关键文献</strong>: Frazzini & Pedersen (2014), Novy-Marx & Velikov (2022), Liu et al.(2018), Asness et al.(2020), Koijen & Yogo (2019), Barroso & Santa-Clara (2015), Moreira & Muir (2017).</p>
+            <div class="footnote">可视化所有数据均源自原文表格与稳健性检验，保证数值可复现。</div>
+        </div>
+    </div>
+
+    <!-- 第16页：关键统计速查表 -->
+    <div class="page"><div class="page-header"><div class="page-title"><i class="fas fa-table"></i> 关键指标速查表</div><div class="page-number">16 / 16</div></div>
+        <div class="page-content">
+            <table class="data-table">
+                <tr><th>指标</th><th>无条件</th><th>低波动</th><th>高波动</th><th>L-H差值</th></tr>
+                <tr><td>BAB月收益(%)</td><td>0.45</td><td>—</td><td>—</td><td>—</td></tr>
+                <tr><td>BAB夏普</td><td>0.34</td><td>0.72</td><td>0.13</td><td>0.59***</td></tr>
+                <tr><td>FF6 Alpha (%)</td><td>-0.08</td><td>0.56</td><td>-0.41</td><td>0.97***</td></tr>
+                <tr><td>剔除高IVOL Alpha (%)</td><td>-0.00</td><td>0.54</td><td>-0.39</td><td>0.93***</td></tr>
+                <tr><td>正交IVOL Alpha (%)</td><td>-0.14</td><td>0.45</td><td>-0.45</td><td>0.90***</td></tr>
+                <tr><td>机构Beta偏好系数</td><td>0.09</td><td>0.18</td><td>0.01</td><td>0.17***</td></tr>
+            </table>
+            <div class="insight-card">所有显著性标记基于原文White稳健标准误；*** p<0.01, ** p<0.05。波动率是理解beta异象不可或缺的条件变量。</div>
+        </div>
+    </div>
+</div>
+
+<!-- 固定导航按钮 -->
+<div class="nav-buttons">
+    <button class="nav-btn" id="prevBtn"><i class="fas fa-arrow-left"></i> 上一页</button>
+    <span class="page-indicator" id="pageIndicator">1 / 16</span>
+    <button class="nav-btn" id="nextBtn">下一页 <i class="fas fa-arrow-right"></i></button>
+</div>
+
+<script>
+    // 分页滚动逻辑
+    const pages = document.querySelectorAll('.page');
+    let currentIdx = 0;
+    const updatePageView = () => {
+        pages[currentIdx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('pageIndicator').innerText = `${currentIdx+1} / ${pages.length}`;
+    };
+    document.getElementById('prevBtn').addEventListener('click', () => {
+        if(currentIdx > 0) { currentIdx--; updatePageView(); }
+    });
+    document.getElementById('nextBtn').addEventListener('click', () => {
+        if(currentIdx < pages.length-1) { currentIdx++; updatePageView(); }
+    });
+    // 监听滚动自动更新页码
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if(entry.isIntersecting) {
+                let idx = Array.from(pages).indexOf(entry.target);
+                if(idx !== -1) currentIdx = idx;
+                document.getElementById('pageIndicator').innerText = `${currentIdx+1} / ${pages.length}`;
+            }
+        });
+    }, { threshold: 0.5 });
+    pages.forEach(page => observer.observe(page));
+
+    // 初始化所有图表
+    new Chart(document.getElementById('sharpeCompChart'), {
+        type: 'bar', data: { labels: ['原始BAB','波动率管理BAB*'], datasets: [{ label:'夏普比率', data: [0.34,0.50], backgroundColor: ['#3b82f6','#10b981'] }] },
+        options: { responsive: true, maintainAspectRatio: true }
+    });
+    new Chart(document.getElementById('conditionalSRChart'), {
+        type: 'bar', data: { labels: ['低波动','高波动'], datasets: [{ label:'夏普比率', data: [0.72,0.13], backgroundColor: ['#22c55e','#f97316'] }] },
+        options: { responsive: true }
+    });
+    new Chart(document.getElementById('ff6AlphaBarChart'), {
+        type: 'bar', data: { labels: ['FF6 Alpha (% monthly)'], datasets: [{ label:'低波动', data: [0.56], backgroundColor:'#2dd4bf' }, { label:'高波动', data: [-0.41], backgroundColor:'#f97316' }] },
+        options: { responsive: true, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw}%` } } } }
+    });
+    new Chart(document.getElementById('arbitrageControlChart'), {
+        type: 'bar', data: { labels: ['剔除高IVOL','Beta正交IVOL','剔除错误定价','剔除双高'], datasets: [{ label:'低波动Alpha (%)', data: [0.54,0.45,0.39,0.54], backgroundColor:'#34d399' }, { label:'高波动Alpha (%)', data: [-0.39,-0.45,-0.62,-0.48], backgroundColor:'#fb923c' }] },
+        options: { responsive: true }
+    });
+    new Chart(document.getElementById('leverageModelChart'), {
+        type: 'line', data: { labels: ['波动乘子0.25','0.5','1(基准)','1.5','2.0','实际低波动','实际高波动'], datasets: [{ label:'模型预测BAB夏普', data: [0.51,0.66,0.79,0.81,0.78,null,null], borderColor:'#dc2626', fill:false, tension:0.2 }, { label:'真实市场BAB夏普', data: [null,null,null,null,null,0.72,0.13], borderColor:'#2563eb', pointBackgroundColor:'#2563eb', pointRadius:6, showLine:false }] },
+        options: { responsive: true, scales: { y: { title:{display:true, text:'夏普比率'}, min:0, max:1 } } }
+    });
+    new Chart(document.getElementById('institutionDemandChart'), {
+        type: 'bar', data: { labels: ['所有机构(低波动)','所有机构(高波动)','家庭部门(恒定)'], datasets: [{ label:'Beta偏好系数 θ^p', data: [0.18,0.01,-0.10], backgroundColor: ['#10b981','#f59e0b','#94a3b8'] }] },
+        options: { responsive: true }
+    });
+</script>
+</body>
+</html>
